@@ -5,6 +5,7 @@
 ## 功能特性
 
 ### 📝 极简记录
+
 - **情绪追踪**：8种情绪类型（开心、焦虑、压力、无聊、悲伤、愤怒、平静、疲惫）
 - **情境记录**：6种常见情境（工作、学习、家庭、社交、独处、其他）
 - **饥饿程度**：5级饥饿度滑块
@@ -12,12 +13,14 @@
 - **可选备注**：记录更多细节
 
 ### 📊 智能分析
+
 - **关联规则挖掘**：基于Apriori算法的关联规则分析
 - **高风险情境识别**：自动识别导致失控进食的高风险情境组合
 - **替代行为建议**：根据情绪和情境提供个性化的替代行为列表
 - **统计指标**：支持度、置信度、提升度等专业指标
 
 ### 💾 本地存储
+
 - 所有数据轻量存储在本地SQLite数据库
 - 无需联网即可使用
 - 数据隐私有保障
@@ -25,12 +28,14 @@
 ## 技术架构
 
 ### 后端
+
 - **框架**：Python FastAPI
 - **数据库**：SQLite + SQLAlchemy ORM
 - **数据验证**：Pydantic
 - **算法**：关联规则挖掘（Apriori原理）
 
 ### 前端
+
 - **UI框架**：Tailwind CSS 3.0
 - **交互**：原生JavaScript
 - **响应式设计**：支持移动端和桌面端
@@ -57,17 +62,20 @@ FoodScape/
 ## 安装与运行
 
 ### 环境要求
+
 - Python 3.8+
 - pip包管理器
 
 ### 安装步骤
 
 1. **克隆项目**
+
 ```bash
 cd /home/ubuntu/FoodScape
 ```
 
-2. **创建虚拟环境（推荐）**
+1. **创建虚拟环境（推荐）**
+
 ```bash
 python -m venv venv
 source venv/bin/activate  # Linux/Mac
@@ -75,7 +83,8 @@ source venv/bin/activate  # Linux/Mac
 venv\Scripts\activate     # Windows
 ```
 
-3. **安装依赖**
+1. **安装依赖**
+
 ```bash
 pip install -r requirements.txt
 ```
@@ -83,38 +92,45 @@ pip install -r requirements.txt
 ### 启动应用
 
 **方式一：直接启动**
+
 ```bash
 uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 **方式二：使用Python模块**
+
 ```bash
 python -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 启动后访问：
-- 应用页面：http://localhost:8000
-- API文档：http://localhost:8000/docs
-- 自动文档：http://localhost:8000/redoc
+
+- 应用页面：<http://localhost:8000>
+- API文档：<http://localhost:8000/docs>
+- 自动文档：<http://localhost:8000/redoc>
 
 ## 使用指南
 
 ### 1. 记录进食
-1. 打开应用，默认进入「记录」页面
-2. 选择当前的情绪状态
-3. 选择当前所处的情境
-4. 滑动饥饿程度滑块
-5. 切换是否感觉失控
-6. （可选）添加备注
-7. 点击「保存记录」
+
+打开应用，默认进入「记录」页面
+
+- 选择当前的情绪状态
+- 选择当前所处的情境
+- 滑动饥饿程度滑块
+- 切换是否感觉失控
+- （可选）添加备注
+- 点击「保存记录」
 
 ### 2. 查看历史
+
 1. 切换到「历史」标签页
 2. 查看所有记录的列表
 3. 每条记录显示：情绪、情境、时间、饥饿度、是否失控
 4. 点击删除图标可删除记录
 
 ### 3. 数据分析
+
 1. 切换到「分析」标签页
 2. 查看统计概览（总记录数、失控次数、自控率）
 3. 当数据充足时（至少5条记录，其中3条失控），系统会自动分析
@@ -129,6 +145,7 @@ python -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
 ### 记录管理
 
 #### 创建记录
+
 ```http
 POST /api/records/
 Content-Type: application/json
@@ -143,16 +160,19 @@ Content-Type: application/json
 ```
 
 #### 获取所有记录
+
 ```http
 GET /api/records/?skip=0&limit=100
 ```
 
 #### 获取单条记录
+
 ```http
 GET /api/records/{record_id}
 ```
 
 #### 更新记录
+
 ```http
 PUT /api/records/{record_id}
 Content-Type: application/json
@@ -163,6 +183,7 @@ Content-Type: application/json
 ```
 
 #### 删除记录
+
 ```http
 DELETE /api/records/{record_id}
 ```
@@ -170,11 +191,13 @@ DELETE /api/records/{record_id}
 ### 分析接口
 
 #### 获取数据分析
+
 ```http
 GET /api/analysis/
 ```
 
 响应示例：
+
 ```json
 {
     "message": "分析完成",
@@ -199,6 +222,7 @@ GET /api/analysis/
 ```
 
 #### 获取统计数据
+
 ```http
 GET /api/stats/
 ```
@@ -209,10 +233,8 @@ GET /api/stats/
 
 1. **支持度（Support）**：某项集在数据集中出现的频率
    - 公式：Support(A) = 包含A的记录数 / 总记录数
-
 2. **置信度（Confidence）**：在A出现的情况下，B出现的概率
    - 公式：Confidence(A→B) = Support(A∪B) / Support(A)
-
 3. **提升度（Lift）**：衡量A出现对B出现的提升程度
    - 公式：Lift(A→B) = Confidence(A→B) / Support(B)
    - Lift > 1：A对B有正向促进作用
@@ -230,21 +252,23 @@ GET /api/stats/
 
 根据不同的情绪和情境组合，系统提供个性化的替代行为建议：
 
-| 情绪 | 情境 | 建议行为 |
-|------|------|----------|
-| 焦虑 | 工作 | 深呼吸、散步、喝水、写感受 |
-| 焦虑 | 学习 | 休息、伸展、聊天、听音乐 |
-| 压力 | 工作 | 暂停、冥想、深呼吸、泡茶 |
-| 压力 | 学习 | 休息、运动、列清单、放松 |
-| 无聊 | 晚上 | 看剧、读书、整理、手工 |
-| 无聊 | 下午 | 散步、打电话、爱好、家务 |
-| 悲伤 | 晚上 | 写日记、看电影、联系支持的人、泡澡 |
+| 情绪 | 情境 | 建议行为                  |
+| -- | -- | --------------------- |
+| 焦虑 | 工作 | 深呼吸、散步、喝水、写感受         |
+| 焦虑 | 学习 | 休息、伸展、聊天、听音乐          |
+| 压力 | 工作 | 暂停、冥想、深呼吸、泡茶          |
+| 压力 | 学习 | 休息、运动、列清单、放松          |
+| 无聊 | 晚上 | 看剧、读书、整理、手工           |
+| 无聊 | 下午 | 散步、打电话、爱好、家务          |
+| 悲伤 | 晚上 | 写日记、看电影、联系支持的人、泡澡     |
 | 悲伤 | 独处 | 听音乐、看搞笑视频、写感恩清单、做开心的事 |
 
 ## 开发说明
 
 ### 添加新的情绪类型
+
 在 `frontend/index.html` 的情绪按钮部分添加新按钮：
+
 ```html
 <button type="button" data-emotion="新情绪" class="emotion-btn ...">
     <span class="text-3xl mb-2 block">😀</span>
@@ -255,7 +279,9 @@ GET /api/stats/
 并在 JavaScript 的 `emotionEmojis` 对象中添加对应表情。
 
 ### 添加新的替代行为
+
 在 `backend/analysis.py` 的 `ALTERNATIVE_BEHAVIORS` 字典中添加新的组合：
+
 ```python
 ALTERNATIVE_BEHAVIORS = {
     ("新情绪", "新情境"): ["行为1", "行为2", "行为3"],
@@ -278,6 +304,6 @@ ALTERNATIVE_BEHAVIORS = {
 
 如有问题或建议，请提交Issue。
 
----
+***
 
 **FoodScape** - 关注你的情绪与进食健康 💜

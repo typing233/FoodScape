@@ -427,12 +427,63 @@
                     </div>
                 </div>
 
-                <div id="analysisMessage" class="text-center py-8">
-                    <!-- Message will be shown here -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <div class="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl p-5 border border-yellow-100">
+                        <h4 class="font-semibold text-gray-700 mb-4 flex items-center">
+                            <span class="text-2xl mr-2">😊</span>
+                            情绪分布
+                        </h4>
+                        <div id="emotionDistribution" class="space-y-3">
+                            <div class="text-center text-gray-400 py-4">暂无数据</div>
+                        </div>
+                    </div>
+                    <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-5 border border-blue-100">
+                        <h4 class="font-semibold text-gray-700 mb-4 flex items-center">
+                            <span class="text-2xl mr-2">📍</span>
+                            情境分布
+                        </h4>
+                        <div id="situationDistribution" class="space-y-3">
+                            <div class="text-center text-gray-400 py-4">暂无数据</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                    <div class="bg-gradient-to-br from-pink-50 to-rose-50 rounded-xl p-5 border border-pink-100">
+                        <h4 class="font-semibold text-gray-700 mb-3 flex items-center">
+                            <span class="text-xl mr-2">🌅</span>
+                            时间偏好
+                        </h4>
+                        <div id="timeDistribution" class="text-center">
+                            <p class="text-gray-400 text-sm">暂无数据</p>
+                        </div>
+                    </div>
+                    <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-5 border border-green-100">
+                        <h4 class="font-semibold text-gray-700 mb-3 flex items-center">
+                            <span class="text-xl mr-2">📈</span>
+                            自控趋势
+                        </h4>
+                        <div id="controlTrend" class="text-center">
+                            <p class="text-gray-400 text-sm">记录更多数据</p>
+                            <p class="text-gray-400 text-sm">查看进步趋势</p>
+                        </div>
+                    </div>
+                    <div class="bg-gradient-to-br from-purple-50 to-violet-50 rounded-xl p-5 border border-purple-100">
+                        <h4 class="font-semibold text-gray-700 mb-3 flex items-center">
+                            <span class="text-xl mr-2">⭐</span>
+                            里程碑
+                        </h4>
+                        <div id="milestones" class="text-center">
+                            <p class="text-gray-400 text-sm">继续记录</p>
+                            <p class="text-gray-400 text-sm">解锁里程碑</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="analysisMessage" class="mb-6">
                 </div>
 
                 <div id="riskSituations" class="space-y-6">
-                    <!-- Risk situations will be loaded here -->
                 </div>
             </div>
 
@@ -710,37 +761,211 @@
 
         async function loadAnalysis() {
             try {
-                const response = await fetch(`${API_BASE}/analysis/`);
-                if (response.ok) {
-                    const data = await response.json();
-                    displayAnalysis(data);
-                }
+                const [analysisResponse, recordsResponse] = await Promise.all([
+                    fetch(`${API_BASE}/analysis/`),
+                    fetch(`${API_BASE}/records/`)
+                ]);
+                
+                const analysisData = await analysisResponse.json();
+                const records = recordsResponse.ok ? await recordsResponse.json() : [];
+                
+                displayAnalysis(analysisData, records);
             } catch (error) {
                 console.error('Failed to load analysis:', error);
             }
         }
 
-        function displayAnalysis(data) {
+        function getTimeCategory(hour) {
+            if (5 <= hour && hour < 12) return '早上';
+            if (12 <= hour && hour < 17) return '下午';
+            if (17 <= hour && hour < 21) return '晚上';
+            return '深夜';
+        }
+
+        function generateBarChart(value, maxValue, color) {
+            const percentage = maxValue > 0 ? (value / maxValue * 100) : 0;
+            return `
+                <div class="w-full bg-gray-200 rounded-full h-3">
+                    <div class="${color} h-3 rounded-full transition-all duration-500" style="width: ${percentage}%"></div>
+                </div>
+            `;
+        }
+
+        function displayAnalysis(analysisData, records) {
             const messageDiv = document.getElementById('analysisMessage');
             const situationsDiv = document.getElementById('riskSituations');
             
-            // Update stats
-            document.getElementById('analysisTotal').textContent = data.total_records || 0;
-            document.getElementById('analysisOutOfControl').textContent = data.out_of_control_count || 0;
-            
-            const total = data.total_records || 0;
-            const outOfControl = data.out_of_control_count || 0;
+            const total = analysisData.total_records || 0;
+            const outOfControl = analysisData.out_of_control_count || 0;
             const controlRate = total > 0 ? ((total - outOfControl) / total * 100).toFixed(1) : 0;
+            
+            document.getElementById('analysisTotal').textContent = total;
+            document.getElementById('analysisOutOfControl').textContent = outOfControl;
             document.getElementById('analysisControlRate').textContent = controlRate + '%';
             
-            if (!data.high_risk_situations || data.high_risk_situations.length === 0) {
+            if (records.length > 0) {
+                const emotionCounts = {};
+                const situationCounts = {};
+                const timeCounts = {};
+                
+                records.forEach(record => {
+                    emotionCounts[record.emotion] = (emotionCounts[record.emotion] || 0) + 1;
+                    situationCounts[record.situation] = (situationCounts[record.situation] || 0) + 1;
+                    
+                    const hour = new Date(record.timestamp).getHours();
+                    const timeCat = getTimeCategory(hour);
+                    timeCounts[timeCat] = (timeCounts[timeCat] || 0) + 1;
+                });
+                
+                const maxEmotion = Math.max(...Object.values(emotionCounts), 1);
+                const maxSituation = Math.max(...Object.values(situationCounts), 1);
+                
+                const emotionEmojis = {
+                    '开心': '😊', '焦虑': '😰', '压力': '😫', '无聊': '😑',
+                    '悲伤': '😢', '愤怒': '😠', '平静': '😌', '疲惫': '😴'
+                };
+                
+                const situationEmojis = {
+                    '工作': '💼', '学习': '📚', '家庭': '🏠',
+                    '社交': '👥', '独处': '🧘', '其他': '❓'
+                };
+                
+                document.getElementById('emotionDistribution').innerHTML = 
+                    Object.entries(emotionCounts)
+                        .sort((a, b) => b[1] - a[1])
+                        .map(([emotion, count]) => `
+                            <div class="flex items-center space-x-3">
+                                <span class="text-xl">${emotionEmojis[emotion] || '😊'}</span>
+                                <div class="flex-1">
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span class="text-gray-700">${emotion}</span>
+                                        <span class="text-gray-500">${count}次</span>
+                                    </div>
+                                    ${generateBarChart(count, maxEmotion, 'bg-gradient-to-r from-yellow-400 to-orange-400')}
+                                </div>
+                            </div>
+                        `).join('');
+                
+                document.getElementById('situationDistribution').innerHTML = 
+                    Object.entries(situationCounts)
+                        .sort((a, b) => b[1] - a[1])
+                        .map(([situation, count]) => `
+                            <div class="flex items-center space-x-3">
+                                <span class="text-xl">${situationEmojis[situation] || '❓'}</span>
+                                <div class="flex-1">
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span class="text-gray-700">${situation}</span>
+                                        <span class="text-gray-500">${count}次</span>
+                                    </div>
+                                    ${generateBarChart(count, maxSituation, 'bg-gradient-to-r from-blue-400 to-indigo-400')}
+                                </div>
+                            </div>
+                        `).join('');
+                
+                const timeEmojis = { '早上': '🌅', '下午': '☀️', '晚上': '🌆', '深夜': '🌙' };
+                const maxTime = Math.max(...Object.values(timeCounts), 1);
+                
+                document.getElementById('timeDistribution').innerHTML = 
+                    Object.entries(timeCounts)
+                        .sort((a, b) => b[1] - a[1])
+                        .map(([time, count], index) => `
+                            <div class="inline-flex items-center px-3 py-1.5 ${index === 0 ? 'bg-pink-100 text-pink-700' : 'bg-gray-100 text-gray-600'} rounded-full text-sm mr-2 mb-2">
+                                <span class="mr-1">${timeEmojis[time] || '🕐'}</span>
+                                ${time} (${count})
+                            </div>
+                        `).join('') || '<p class="text-gray-400 text-sm">暂无时间数据</p>';
+            }
+            
+            const milestones = [];
+            if (total >= 1) milestones.push({ name: '初次记录', icon: '🌟', achieved: true });
+            if (total >= 5) milestones.push({ name: '开始追踪', icon: '📊', achieved: true });
+            if (total >= 10) milestones.push({ name: '建立习惯', icon: '🎯', achieved: true });
+            if (total >= 20) milestones.push({ name: '数据达人', icon: '🏆', achieved: true });
+            if (controlRate >= 50 && total >= 5) milestones.push({ name: '自控进步', icon: '💪', achieved: true });
+            
+            if (milestones.length > 0) {
+                document.getElementById('milestones').innerHTML = `
+                    <div class="flex flex-wrap justify-center gap-2">
+                        ${milestones.map(m => `
+                            <span class="inline-flex items-center px-2 py-1 bg-purple-100 text-purple-700 rounded-lg text-xs">
+                                <span class="mr-1">${m.icon}</span>${m.name}
+                            </span>
+                        `).join('')}
+                    </div>
+                `;
+            }
+            
+            if (records.length > 0) {
+                const recentRecords = records.slice(0, Math.min(5, records.length));
+                const recentControlRate = recentRecords.filter(r => !r.is_out_of_control).length / recentRecords.length * 100;
+                
+                document.getElementById('controlTrend').innerHTML = `
+                    <p class="text-2xl font-bold ${recentControlRate >= 50 ? 'text-green-600' : 'text-orange-500'}">${recentControlRate.toFixed(0)}%</p>
+                    <p class="text-gray-500 text-xs mt-1">近期自控率</p>
+                `;
+            }
+            
+            if (!analysisData.high_risk_situations || analysisData.high_risk_situations.length === 0) {
+                const recordsNeeded = Math.max(0, 5 - total);
+                const outOfControlNeeded = Math.max(0, 3 - outOfControl);
+                
                 messageDiv.innerHTML = `
-                    <div class="py-8">
-                        <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
-                        </svg>
-                        <p class="text-gray-600 text-lg font-medium">${data.message}</p>
-                        <p class="text-gray-400 mt-2">继续坚持记录，数据越丰富分析越精准</p>
+                    <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-100">
+                        <div class="flex items-start space-x-4">
+                            <div class="w-16 h-16 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                                <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div class="flex-1">
+                                <h4 class="text-lg font-semibold text-gray-800 mb-2">${analysisData.message}</h4>
+                                <p class="text-gray-600 mb-4">继续坚持记录，数据越丰富分析越精准！</p>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div class="bg-white rounded-lg p-4 border border-blue-100">
+                                        <p class="text-sm text-gray-500 mb-1">距离完整分析还需</p>
+                                        <div class="flex items-center space-x-2">
+                                            <div class="flex-1 bg-gray-200 rounded-full h-2">
+                                                <div class="bg-gradient-to-r from-blue-400 to-indigo-500 h-2 rounded-full" style="width: ${Math.min(100, total/5*100)}%"></div>
+                                            </div>
+                                            <span class="text-sm font-medium text-blue-600">${total}/5</span>
+                                        </div>
+                                        <p class="text-xs text-gray-400 mt-1">${recordsNeeded > 0 ? `还需 ${recordsNeeded} 条记录` : '已达标 ✓'}</p>
+                                    </div>
+                                    <div class="bg-white rounded-lg p-4 border border-orange-100">
+                                        <p class="text-sm text-gray-500 mb-1">失控记录</p>
+                                        <div class="flex items-center space-x-2">
+                                            <div class="flex-1 bg-gray-200 rounded-full h-2">
+                                                <div class="bg-gradient-to-r from-orange-400 to-red-500 h-2 rounded-full" style="width: ${Math.min(100, outOfControl/3*100)}%"></div>
+                                            </div>
+                                            <span class="text-sm font-medium text-orange-600">${outOfControl}/3</span>
+                                        </div>
+                                        <p class="text-xs text-gray-400 mt-1">${outOfControlNeeded > 0 ? `还需 ${outOfControlNeeded} 条失控记录` : '已达标 ✓'}</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-white rounded-lg p-4 border border-blue-100">
+                                    <h5 class="font-medium text-gray-700 mb-3 flex items-center">
+                                        <span class="text-lg mr-2">💡</span>
+                                        为什么需要这些数据？
+                                    </h5>
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                                        <div class="flex items-start space-x-2">
+                                            <span class="text-purple-500 mt-0.5">•</span>
+                                            <span class="text-gray-600">识别导致你失控进食的情绪模式</span>
+                                        </div>
+                                        <div class="flex items-start space-x-2">
+                                            <span class="text-purple-500 mt-0.5">•</span>
+                                            <span class="text-gray-600">发现特定情境下的触发规律</span>
+                                        </div>
+                                        <div class="flex items-start space-x-2">
+                                            <span class="text-purple-500 mt-0.5">•</span>
+                                            <span class="text-gray-600">获得个性化的替代行为建议</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 `;
                 situationsDiv.innerHTML = '';
@@ -748,38 +973,50 @@
             }
 
             messageDiv.innerHTML = `
-                <div class="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
-                    <svg class="w-8 h-8 mx-auto text-green-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    <p class="text-green-700 font-medium">分析完成！发现 ${data.high_risk_situations.length} 个高风险情境组合</p>
+                <div class="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-5">
+                    <div class="flex items-center justify-center space-x-3">
+                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-green-800">分析完成！</h4>
+                            <p class="text-green-600">发现 ${analysisData.high_risk_situations.length} 个高风险情境组合，查看下方详情</p>
+                        </div>
+                    </div>
                 </div>
             `;
 
-            situationsDiv.innerHTML = data.high_risk_situations.map((situation, index) => `
+            situationsDiv.innerHTML = analysisData.high_risk_situations.slice(0, 5).map((situation, index) => `
                 <div class="risk-card bg-red-50 rounded-xl p-6 fade-in" style="animation-delay: ${index * 0.1}s">
                     <div class="flex items-start justify-between mb-4">
                         <div>
-                            <h4 class="font-bold text-gray-800 text-lg mb-1">高风险情境 #${index + 1}</h4>
-                            <p class="text-purple-600 font-medium">${situation.situation_combination}</p>
+                            <div class="flex items-center space-x-2 mb-1">
+                                <span class="inline-flex items-center px-2.5 py-0.5 bg-red-500 text-white text-xs font-medium rounded-full">
+                                    高风险 #${index + 1}
+                                </span>
+                                <span class="text-gray-500 text-sm">${situation.count} 次</span>
+                            </div>
+                            <p class="text-purple-700 font-medium text-lg">${situation.situation_combination}</p>
                         </div>
-                        <span class="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                            ${situation.count} 次
-                        </span>
                     </div>
                     
                     <div class="grid grid-cols-3 gap-4 mb-6 p-4 bg-white rounded-lg">
                         <div class="text-center">
-                            <p class="text-sm text-gray-500">置信度</p>
-                            <p class="text-xl font-bold text-purple-600">${(situation.confidence * 100).toFixed(0)}%</p>
+                            <p class="text-sm text-gray-500 mb-1">置信度</p>
+                            <p class="text-2xl font-bold text-purple-600">${(situation.confidence * 100).toFixed(0)}%</p>
+                            <p class="text-xs text-gray-400">该组合导致失控的概率</p>
                         </div>
                         <div class="text-center">
-                            <p class="text-sm text-gray-500">支持度</p>
-                            <p class="text-xl font-bold text-blue-600">${(situation.support * 100).toFixed(0)}%</p>
+                            <p class="text-sm text-gray-500 mb-1">支持度</p>
+                            <p class="text-2xl font-bold text-blue-600">${(situation.support * 100).toFixed(0)}%</p>
+                            <p class="text-xs text-gray-400">该组合出现的频率</p>
                         </div>
                         <div class="text-center">
-                            <p class="text-sm text-gray-500">提升度</p>
-                            <p class="text-xl font-bold text-green-600">${situation.lift.toFixed(1)}</p>
+                            <p class="text-sm text-gray-500 mb-1">提升度</p>
+                            <p class="text-2xl font-bold ${situation.lift > 1 ? 'text-green-600' : 'text-gray-500'}">${situation.lift.toFixed(1)}</p>
+                            <p class="text-xs text-gray-400">预测能力强弱</p>
                         </div>
                     </div>
 
@@ -788,13 +1025,13 @@
                             <svg class="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
                             </svg>
-                            建议的替代行为（勾选已尝试的）
+                            建议的替代行为（当你处于此情境时尝试）
                         </h5>
-                        <div class="space-y-2">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                             ${situation.alternative_behaviors.map((behavior, i) => `
-                                <label class="behavior-item flex items-center p-3 bg-white rounded-lg cursor-pointer hover:bg-green-50 transition-all">
+                                <label class="behavior-item flex items-center p-3 bg-white rounded-lg cursor-pointer hover:bg-green-50 transition-all border border-gray-100">
                                     <input type="checkbox" class="w-5 h-5 text-green-500 rounded border-gray-300 focus:ring-green-500 mr-3">
-                                    <span class="text-gray-700">${behavior}</span>
+                                    <span class="text-gray-700 text-sm">${behavior}</span>
                                 </label>
                             `).join('')}
                         </div>
