@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FoodScape - 健康饮食记录与分析</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .tab-btn {
+            padding: 12px 24px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            border-radius: 25px;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .tab-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .tab-btn.active {
+            background: white;
+            color: #667eea;
+            font-weight: bold;
+        }
+        
+        .tab-content {
+            display: none;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        h2 {
+            color: #2c3e50;
+            margin-bottom: 25px;
+            font-size: 1.8rem;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+            display: inline-block;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group label {
+            margin-bottom: 8px;
+            color: #34495e;
+            font-weight: 600;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(17, 153, 142, 0.4);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+            color: white;
+            padding: 8px 15px;
+            font-size: 0.9rem;
+        }
+        
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(235, 51, 73, 0.4);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(240, 147, 251, 0.4);
+        }
+        
+        .card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .card h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+        }
+        
+        .stat-card.green {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+        
+        .stat-card.orange {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .stat-card.blue {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        .stat-card h4 {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+        
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        
+        .stat-card .unit {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        th {
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin-bottom: 30px;
+        }
+        
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 30px;
+        }
+        
+        .heatmap-container {
+            overflow-x: auto;
+        }
+        
+        .heatmap-table {
+            width: 100%;
+            min-width: 600px;
+        }
+        
+        .heatmap-table td {
+            text-align: center;
+            padding: 10px;
+            font-size: 0.85rem;
+            border: 1px solid #ddd;
+        }
+        
+        .heatmap-table th {
+            text-align: center;
+            padding: 10px;
+        }
+        
+        .heatmap-low { background: #e8f5e9; }
+        .heatmap-medium { background: #fff9c4; }
+        .heatmap-high { background: #ffccbc; }
+        .heatmap-very-high { background: #ffcdd2; }
+        
+        .export-section {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .export-section select {
+            padding: 10px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+        }
+        
+        .nutrition-info {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        
+        .nutrition-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #555;
+        }
+        
+        .nutrition-item span {
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .alert {
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .food-selection {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+        
+        .food-selection .form-group {
+            flex: 1;
+        }
+        
+        .quantity-input {
+            width: 100px;
+        }
+        
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .chart-container {
+                height: 300px;
+            }
+            
+            .food-selection {
+                flex-direction: column;
+            }
+            
+            .quantity-input {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>FoodScape</h1>
+            <p>关注健康饮食，了解自己的进食习惯</p>
+        </header>
+        
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('food')">食物记录与营养分析</button>
+            <button class="tab-btn" onclick="switchTab('emotion')">情绪记录</button>
+            <button class="tab-btn" onclick="switchTab('trends')">趋势可视化</button>
+            <button class="tab-btn" onclick="switchTab('export')">导出报告</button>
+        </div>
+        
+        <div id="alert-success" class="alert alert-success"></div>
+        <div id="alert-error" class="alert alert-error"></div>
+        
+        <div id="food" class="tab-content active">
+            <h2>食物详情记录与营养分析</h2>
+            
+            <div class="card">
+                <h3>添加食物记录</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="food-select">选择食物类型</label>
+                        <select id="food-select">
+                            <option value="">请选择食物...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="food-quantity">分量</label>
+                        <input type="number" id="food-quantity" class="quantity-input" min="0.1" step="0.1" value="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="meal-type">餐次类型</label>
+                        <select id="meal-type">
+                            <option value="早餐">早餐</option>
+                            <option value="午餐">午餐</option>
+                            <option value="晚餐">晚餐</option>
+                            <option value="加餐">加餐</option>
+                            <option value="零食">零食</option>
+                            <option value="宵夜">宵夜</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="food-notes">备注（可选）</label>
+                        <input type="text" id="food-notes" placeholder="添加备注...">
+                    </div>
+                </div>
+                <div class="nutrition-info" id="nutrition-preview"></div>
+                <button class="btn btn-primary" onclick="addFoodRecord()">添加食物记录</button>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h4>今日总卡路里</h4>
+                    <div class="value" id="today-calories">0</div>
+                    <div class="unit">kcal</div>
+                </div>
+                <div class="stat-card green">
+                    <h4>今日碳水化合物</h4>
+                    <div class="value" id="today-carbs">0</div>
+                    <div class="unit">g</div>
+                </div>
+                <div class="stat-card orange">
+                    <h4>今日蛋白质</h4>
+                    <div class="value" id="today-protein">0</div>
+                    <div class="unit">g</div>
+                </div>
+                <div class="stat-card blue">
+                    <h4>今日脂肪</h4>
+                    <div class="value" id="today-fat">0</div>
+                    <div class="unit">g</div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>食物记录历史</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>时间</th>
+                            <th>食物名称</th>
+                            <th>分量</th>
+                            <th>餐次</th>
+                            <th>卡路里</th>
+                            <th>碳水</th>
+                            <th>蛋白质</th>
+                            <th>脂肪</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="food-records-table"></tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div id="emotion" class="tab-content">
+            <h2>情绪记录</h2>
+            
+            <div class="card">
+                <h3>添加情绪记录</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="emotion-select">当前情绪</label>
+                        <select id="emotion-select">
+                            <option value="焦虑">焦虑</option>
+                            <option value="压力">压力</option>
+                            <option value="无聊">无聊</option>
+                            <option value="悲伤">悲伤</option>
+                            <option value="愤怒">愤怒</option>
+                            <option value="疲惫">疲惫</option>
+                            <option value="兴奋">兴奋</option>
+                            <option value="平静">平静</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="situation-select">当前情境</label>
+                        <select id="situation-select">
+                            <option value="工作学习">工作学习</option>
+                            <option value="休闲娱乐">休闲娱乐</option>
+                            <option value="社交场合">社交场合</option>
+                            <option value="独处">独处</option>
+                            <option value="通勤">通勤</option>
+                            <option value="睡前">睡前</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="hunger-level">饥饿程度 (1-10)</label>
+                        <input type="number" id="hunger-level" min="1" max="10" value="5">
+                    </div>
+                    <div class="form-group">
+                        <label for="out-of-control">是否失控进食</label>
+                        <select id="out-of-control">
+                            <option value="false">否</option>
+                            <option value="true">是</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label for="emotion-notes">备注（可选）</label>
+                        <input type="text" id="emotion-notes" placeholder="添加备注...">
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="addEmotionRecord()">添加情绪记录</button>
+            </div>
+            
+            <div class="card">
+                <h3>情绪记录历史</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>时间</th>
+                            <th>情绪</th>
+                            <th>情境</th>
+                            <th>饥饿程度</th>
+                            <th>失控进食</th>
+                            <th>备注</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="emotion-records-table"></tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div id="trends" class="tab-content">
+            <h2>情绪与进食趋势可视化</h2>
+            
+            <div class="form-group" style="max-width: 300px; margin-bottom: 20px;">
+                <label>选择时间周期</label>
+                <select id="trend-period" onchange="loadTrends()">
+                    <option value="week">最近一周</option>
+                    <option value="month">最近一月</option>
+                </select>
+            </div>
+            
+            <div class="charts-grid">
+                <div class="card">
+                    <h3>情绪趋势曲线</h3>
+                    <div class="chart-container">
+                        <canvas id="emotion-chart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>失控进食频率（按小时）</h3>
+                    <div class="chart-container">
+                        <canvas id="out-of-control-chart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>失控进食频率（按星期）</h3>
+                    <div class="chart-container">
+                        <canvas id="weekday-chart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>营养摄入趋势</h3>
+                    <div class="chart-container">
+                        <canvas id="nutrition-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>情绪-情境关联热力图（失控进食率 %）</h3>
+                <div class="heatmap-container">
+                    <table class="heatmap-table" id="heatmap-table"></table>
+                </div>
+            </div>
+        </div>
+        
+        <div id="export" class="tab-content">
+            <h2>导出与分享报告</h2>
+            
+            <div class="card">
+                <h3>生成报告</h3>
+                <div class="export-section">
+                    <div class="form-group">
+                        <label for="report-type">报告类型</label>
+                        <select id="report-type">
+                            <option value="weekly">每周报告</option>
+                            <option value="monthly">每月报告</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="export-format">导出格式</label>
+                        <select id="export-format">
+                            <option value="json">JSON 格式</option>
+                            <option value="pdf">HTML/PDF 格式</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-success" onclick="exportReport()">导出报告</button>
+                </div>
+            </div>
+            
+            <div class="card" id="json-preview" style="display: none;">
+                <h3>JSON 报告预览</h3>
+                <pre id="json-content" style="background: #f8f9fa; padding: 20px; border-radius: 10px; overflow-x: auto; white-space: pre-wrap; word-break: break-all;"></pre>
+                <button class="btn btn-primary" style="margin-top: 15px;" onclick="downloadJSON()">下载 JSON 文件</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let foodDatabase = [];
+        let emotionChart = null;
+        let outOfControlChart = null;
+        let weekdayChart = null;
+        let nutritionChart = null;
+        let lastJSONReport = null;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            loadFoodDatabase();
+            loadFoodRecords();
+            loadEmotionRecords();
+            loadTrends();
+        });
+        
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+            
+            if (tabName === 'trends') {
+                setTimeout(() => loadTrends(), 100);
+            }
+        }
+        
+        function showAlert(type, message) {
+            const alert = document.getElementById(`alert-${type}`);
+            alert.textContent = message;
+            alert.style.display = 'block';
+            
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 3000);
+        }
+        
+        async function loadFoodDatabase() {
+            try {
+                const response = await fetch('/api/foods');
+                foodDatabase = await response.json();
+                
+                const select = document.getElementById('food-select');
+                select.innerHTML = '<option value="">请选择食物...</option>';
+                
+                foodDatabase.forEach(food => {
+                    const option = document.createElement('option');
+                    option.value = food.name;
+                    option.textContent = `${food.name} (${food.calories}kcal/${food.unit})`;
+                    select.appendChild(option);
+                });
+                
+                select.addEventListener('change', updateNutritionPreview);
+                document.getElementById('food-quantity').addEventListener('input', updateNutritionPreview);
+                
+            } catch (error) {
+                console.error('Error loading food database:', error);
+            }
+        }
+        
+        function updateNutritionPreview() {
+            const foodName = document.getElementById('food-select').value;
+            const quantity = parseFloat(document.getElementById('food-quantity').value) || 0;
+            
+            if (!foodName || quantity <= 0) {
+                document.getElementById('nutrition-preview').innerHTML = '';
+                return;
+            }
+            
+            const food = foodDatabase.find(f => f.name === foodName);
+            if (!food) return;
+            
+            const calories = (food.calories * quantity).toFixed(1);
+            const carbs = (food.carbs * quantity).toFixed(1);
+            const protein = (food.protein * quantity).toFixed(1);
+            const fat = (food.fat * quantity).toFixed(1);
+            
+            document.getElementById('nutrition-preview').innerHTML = `
+                <div class="nutrition-item"><span>卡路里:</span> ${calories} kcal</div>
+                <div class="nutrition-item"><span>碳水:</span> ${carbs} g</div>
+                <div class="nutrition-item"><span>蛋白质:</span> ${protein} g</div>
+                <div class="nutrition-item"><span>脂肪:</span> ${fat} g</div>
+            `;
+        }
+        
+        async function addFoodRecord() {
+            const foodName = document.getElementById('food-select').value;
+            const quantity = parseFloat(document.getElementById('food-quantity').value);
+            const mealType = document.getElementById('meal-type').value;
+            const notes = document.getElementById('food-notes').value;
+            
+            if (!foodName || !quantity || quantity <= 0) {
+                showAlert('error', '请选择食物并输入有效分量');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/food-records', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        food_name: foodName,
+                        quantity: quantity,
+                        meal_type: mealType,
+                        notes: notes
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showAlert('success', '食物记录添加成功！');
+                    document.getElementById('food-select').value = '';
+                    document.getElementById('food-quantity').value = 1;
+                    document.getElementById('food-notes').value = '';
+                    document.getElementById('nutrition-preview').innerHTML = '';
+                    loadFoodRecords();
+                } else {
+                    showAlert('error', result.error || '添加失败');
+                }
+            } catch (error) {
+                showAlert('error', '网络错误，请重试');
+                console.error('Error:', error);
+            }
+        }
+        
+        async function loadFoodRecords() {
+            try {
+                const [recordsResponse, analysisResponse] = await Promise.all([
+                    fetch('/api/food-records'),
+                    fetch('/api/nutrition-analysis?period=day')
+                ]);
+                
+                const records = await recordsResponse.json();
+                const analysis = await analysisResponse.json();
+                
+                const tbody = document.getElementById('food-records-table');
+                tbody.innerHTML = '';
+                
+                records.forEach(record => {
+                    const date = new Date(record.timestamp);
+                    const timeStr = date.toLocaleString('zh-CN');
+                    
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${timeStr}</td>
+                        <td>${record.food_name}</td>
+                        <td>${record.quantity} ${record.unit}</td>
+                        <td>${record.meal_type}</td>
+                        <td>${record.calories.toFixed(1)}</td>
+                        <td>${record.carbs.toFixed(1)}</td>
+                        <td>${record.protein.toFixed(1)}</td>
+                        <td>${record.fat.toFixed(1)}</td>
+                        <td><button class="btn btn-danger" onclick="deleteFoodRecord(${record.id})">删除</button></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+                
+                document.getElementById('today-calories').textContent = analysis.summary.total_calories;
+                document.getElementById('today-carbs').textContent = analysis.summary.total_carbs;
+                document.getElementById('today-protein').textContent = analysis.summary.total_protein;
+                document.getElementById('today-fat').textContent = analysis.summary.total_fat;
+                
+            } catch (error) {
+                console.error('Error loading food records:', error);
+            }
+        }
+        
+        async function deleteFoodRecord(id) {
+            if (!confirm('确定要删除这条记录吗？')) return;
+            
+            try {
+                await fetch(`/api/food-records/${id}`, { method: 'DELETE' });
+                showAlert('success', '记录已删除');
+                loadFoodRecords();
+            } catch (error) {
+                showAlert('error', '删除失败');
+            }
+        }
+        
+        async function addEmotionRecord() {
+            const emotion = document.getElementById('emotion-select').value;
+            const situation = document.getElementById('situation-select').value;
+            const hungerLevel = parseInt(document.getElementById('hunger-level').value);
+            const isOutOfControl = document.getElementById('out-of-control').value === 'true';
+            const notes = document.getElementById('emotion-notes').value;
+            
+            try {
+                const response = await fetch('/api/records', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        emotion: emotion,
+                        situation: situation,
+                        hunger_level: hungerLevel,
+                        is_out_of_control: isOutOfControl,
+                        notes: notes
+                    })
+                });
+                
+                if (response.ok) {
+                    showAlert('success', '情绪记录添加成功！');
+                    document.getElementById('emotion-notes').value = '';
+                    loadEmotionRecords();
+                } else {
+                    showAlert('error', '添加失败');
+                }
+            } catch (error) {
+                showAlert('error', '网络错误，请重试');
+                console.error('Error:', error);
+            }
+        }
+        
+        async function loadEmotionRecords() {
+            try {
+                const response = await fetch('/api/records');
+                const records = await response.json();
+                
+                const tbody = document.getElementById('emotion-records-table');
+                tbody.innerHTML = '';
+                
+                records.forEach(record => {
+                    const date = new Date(record.timestamp);
+                    const timeStr = date.toLocaleString('zh-CN');
+                    
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${timeStr}</td>
+                        <td>${record.emotion}</td>
+                        <td>${record.situation}</td>
+                        <td>${record.hunger_level}</td>
+                        <td>${record.is_out_of_control ? '是' : '否'}</td>
+                        <td>${record.notes || '-'}</td>
+                        <td><button class="btn btn-danger" onclick="deleteEmotionRecord(${record.id})">删除</button></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+                
+            } catch (error) {
+                console.error('Error loading emotion records:', error);
+            }
+        }
+        
+        async function deleteEmotionRecord(id) {
+            if (!confirm('确定要删除这条记录吗？')) return;
+            
+            try {
+                await fetch(`/api/records/${id}`, { method: 'DELETE' });
+                showAlert('success', '记录已删除');
+                loadEmotionRecords();
+            } catch (error) {
+                showAlert('error', '删除失败');
+            }
+        }
+        
+        async function loadTrends() {
+            const period = document.getElementById('trend-period').value;
+            
+            try {
+                const [emotionResponse, outOfControlResponse, heatmapResponse, nutritionResponse] = await Promise.all([
+                    fetch(`/api/trends/emotion?period=${period}`),
+                    fetch(`/api/trends/out-of-control?period=${period}`),
+                    fetch(`/api/trends/situation-heatmap?period=${period}`),
+                    fetch(`/api/nutrition-analysis?period=${period === 'week' ? 'week' : 'month'}`)
+                ]);
+                
+                const emotionData = await emotionResponse.json();
+                const outOfControlData = await outOfControlResponse.json();
+                const heatmapData = await heatmapResponse.json();
+                const nutritionData = await nutritionResponse.json();
+                
+                updateEmotionChart(emotionData);
+                updateOutOfControlChart(outOfControlData);
+                updateWeekdayChart(outOfControlData);
+                updateNutritionChart(nutritionData);
+                updateHeatmap(heatmapData);
+                
+            } catch (error) {
+                console.error('Error loading trends:', error);
+            }
+        }
+        
+        function updateEmotionChart(data) {
+            const ctx = document.getElementById('emotion-chart').getContext('2d');
+            
+            const emotionColors = {
+                '焦虑': '#e74c3c',
+                '压力': '#f39c12',
+                '无聊': '#95a5a6',
+                '悲伤': '#3498db',
+                '愤怒': '#c0392b',
+                '疲惫': '#7f8c8d',
+                '兴奋': '#2ecc71',
+                '平静': '#1abc9c'
+            };
+            
+            const labels = data.trend_data.map(d => d.date);
+            const datasets = [];
+            
+            const allEmotions = ['焦虑', '压力', '无聊', '悲伤', '愤怒', '疲惫', '兴奋', '平静'];
+            
+            allEmotions.forEach(emotion => {
+                const counts = data.trend_data.map(d => d.emotion_counts[emotion] || 0);
+                datasets.push({
+                    label: emotion,
+                    data: counts,
+                    borderColor: emotionColors[emotion],
+                    backgroundColor: emotionColors[emotion] + '20',
+                    fill: true,
+                    tension: 0.4
+                });
+            });
+            
+            if (emotionChart) {
+                emotionChart.destroy();
+            }
+            
+            emotionChart = new Chart(ctx, {
+                type: 'line',
+                data: { labels, datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, title: { display: true, text: '记录次数' } }
+                    }
+                }
+            });
+        }
+        
+        function updateOutOfControlChart(data) {
+            const ctx = document.getElementById('out-of-control-chart').getContext('2d');
+            
+            const labels = data.hourly_data.map(d => `${d.hour}:00`);
+            const rates = data.hourly_data.map(d => d.rate);
+            
+            if (outOfControlChart) {
+                outOfControlChart.destroy();
+            }
+            
+            outOfControlChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: '失控进食率 (%)',
+                        data: rates,
+                        backgroundColor: 'rgba(231, 76, 60, 0.7)',
+                        borderColor: 'rgba(231, 76, 60, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, max: 100, title: { display: true, text: '失控率 (%)' } }
+                    }
+                }
+            });
+        }
+        
+        function updateWeekdayChart(data) {
+            const ctx = document.getElementById('weekday-chart').getContext('2d');
+            
+            const labels = data.weekday_data.map(d => d.weekday);
+            const rates = data.weekday_data.map(d => d.rate);
+            
+            if (weekdayChart) {
+                weekdayChart.destroy();
+            }
+            
+            weekdayChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: '失控进食率 (%)',
+                        data: rates,
+                        backgroundColor: [
+                            'rgba(52, 152, 219, 0.7)',
+                            'rgba(46, 204, 113, 0.7)',
+                            'rgba(241, 196, 15, 0.7)',
+                            'rgba(230, 126, 34, 0.7)',
+                            'rgba(231, 76, 60, 0.7)',
+                            'rgba(155, 89, 182, 0.7)',
+                            'rgba(26, 188, 156, 0.7)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, max: 100, title: { display: true, text: '失控率 (%)' } }
+                    }
+                }
+            });
+        }
+        
+        function updateNutritionChart(data) {
+            const ctx = document.getElementById('nutrition-chart').getContext('2d');
+            
+            const labels = data.daily_data.map(d => d.date);
+            
+            if (nutritionChart) {
+                nutritionChart.destroy();
+            }
+            
+            nutritionChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: '卡路里 (kcal)',
+                            data: data.daily_data.map(d => d.calories),
+                            borderColor: '#e74c3c',
+                            backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: '碳水 (g)',
+                            data: data.daily_data.map(d => d.carbs),
+                            borderColor: '#3498db',
+                            backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                            yAxisID: 'y1'
+                        },
+                        {
+                            label: '蛋白质 (g)',
+                            data: data.daily_data.map(d => d.protein),
+                            borderColor: '#2ecc71',
+                            backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                            yAxisID: 'y1'
+                        },
+                        {
+                            label: '脂肪 (g)',
+                            data: data.daily_data.map(d => d.fat),
+                            borderColor: '#f39c12',
+                            backgroundColor: 'rgba(243, 156, 18, 0.1)',
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: { display: true, text: '卡路里 (kcal)' }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: { display: true, text: '重量 (g)' },
+                            grid: { drawOnChartArea: false }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function updateHeatmap(data) {
+            const table = document.getElementById('heatmap-table');
+            
+            let html = '<thead><tr><th>情绪 \\ 情境</th>';
+            data.situations.forEach(s => {
+                html += `<th>${s}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+            
+            data.heatmap_matrix.forEach(row => {
+                html += `<tr><td>${row.emotion}</td>`;
+                data.situations.forEach(situation => {
+                    const cell = row[situation];
+                    let bgClass = '';
+                    if (cell.rate >= 75) bgClass = 'heatmap-very-high';
+                    else if (cell.rate >= 50) bgClass = 'heatmap-high';
+                    else if (cell.rate >= 25) bgClass = 'heatmap-medium';
+                    else bgClass = 'heatmap-low';
+                    
+                    html += `<td class="${bgClass}" title="总计: ${cell.total} 次, 失控: ${cell.out_of_control} 次">
+                        ${cell.rate}%<br><small>(${cell.total}条)</small>
+                    </td>`;
+                });
+                html += '</tr>';
+            });
+            
+            html += '</tbody>';
+            table.innerHTML = html;
+        }
+        
+        async function exportReport() {
+            const reportType = document.getElementById('report-type').value;
+            const format = document.getElementById('export-format').value;
+            
+            try {
+                if (format === 'json') {
+                    const response = await fetch(`/api/export/json?type=${reportType}`);
+                    lastJSONReport = await response.json();
+                    
+                    document.getElementById('json-content').textContent = JSON.stringify(lastJSONReport, null, 2);
+                    document.getElementById('json-preview').style.display = 'block';
+                    showAlert('success', 'JSON 报告生成成功！');
+                } else {
+                    window.open(`/api/export/pdf?type=${reportType}`, '_blank');
+                    showAlert('success', 'HTML 报告已在新窗口打开，可打印为 PDF');
+                }
+            } catch (error) {
+                showAlert('error', '导出失败，请重试');
+                console.error('Export error:', error);
+            }
+        }
+        
+        function downloadJSON() {
+            if (!lastJSONReport) return;
+            
+            const blob = new Blob([JSON.stringify(lastJSONReport, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `foodscape-report-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
