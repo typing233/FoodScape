@@ -6,6 +6,14 @@ from datetime import datetime, timedelta
 from collections import defaultdict
 import json
 import io
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import cm
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.cidfonts import UnicodeCIDFont
+from reportlab.pdfbase.ttfonts import TTFont
 
 app = Flask(__name__, static_folder='static')
 CORS(app)
@@ -828,124 +836,237 @@ def export_pdf():
     total_fat = sum(f['fat'] for f in food_records)
     out_of_control_count = sum(1 for r in records if r['is_out_of_control'] == 1)
     
-    html_content = f'''
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="UTF-8">
-        <title>{report_title}</title>
-        <style>
-            body {{ font-family: Arial, sans-serif; margin: 40px; }}
-            h1 {{ color: #2c3e50; text-align: center; }}
-            h2 {{ color: #34495e; border-bottom: 2px solid #3498db; padding-bottom: 10px; }}
-            .section {{ margin: 30px 0; }}
-            .summary-box {{ background-color: #f8f9fa; padding: 20px; border-radius: 10px; margin: 20px 0; }}
-            .stat-row {{ display: flex; justify-content: space-between; margin: 10px 0; }}
-            .stat-label {{ font-weight: bold; }}
-            table {{ width: 100%; border-collapse: collapse; margin: 20px 0; }}
-            th, td {{ border: 1px solid #ddd; padding: 12px; text-align: left; }}
-            th {{ background-color: #3498db; color: white; }}
-            tr:nth-child(even) {{ background-color: #f2f2f2; }}
-            .footer {{ text-align: center; margin-top: 50px; color: #7f8c8d; font-size: 12px; }}
-        </style>
-    </head>
-    <body>
-        <h1>{report_title}</h1>
-        <p style="text-align: center; color: #7f8c8d;">生成时间: {now.strftime('%Y-%m-%d %H:%M:%S')}</p>
-        
-        <div class="section">
-            <h2>报告摘要</h2>
-            <div class="summary-box">
-                <div class="stat-row"><span class="stat-label">情绪记录总数:</span> <span>{len(records)} 条</span></div>
-                <div class="stat-row"><span class="stat-label">食物记录总数:</span> <span>{len(food_records)} 条</span></div>
-                <div class="stat-row"><span class="stat-label">失控进食次数:</span> <span>{out_of_control_count} 次</span></div>
-                <div class="stat-row"><span class="stat-label">失控进食率:</span> <span>{round(out_of_control_count / len(records) * 100, 1) if records else 0}%</span></div>
-            </div>
-        </div>
-        
-        <div class="section">
-            <h2>营养摄入统计</h2>
-            <div class="summary-box">
-                <div class="stat-row"><span class="stat-label">总卡路里:</span> <span>{round(total_calories, 1)} kcal</span></div>
-                <div class="stat-row"><span class="stat-label">总碳水化合物:</span> <span>{round(total_carbs, 1)} g</span></div>
-                <div class="stat-row"><span class="stat-label">总蛋白质:</span> <span>{round(total_protein, 1)} g</span></div>
-                <div class="stat-row"><span class="stat-label">总脂肪:</span> <span>{round(total_fat, 1)} g</span></div>
-            </div>
-        </div>
-        
-        <div class="section">
-            <h2>食物记录详情</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>时间</th>
-                        <th>食物名称</th>
-                        <th>分量</th>
-                        <th>餐次</th>
-                        <th>卡路里</th>
-                    </tr>
-                </thead>
-                <tbody>
-    '''
+    try:
+        pdfmetrics.registerFont(UnicodeCIDFont('STSong-Light'))
+        font_name = 'STSong-Light'
+    except:
+        try:
+            font_paths = [
+                '/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf',
+                '/usr/share/fonts/truetype/wqy/wqy-microhei.ttc',
+                '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc',
+                '/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc',
+            ]
+            
+            font_name = 'ChineseFont'
+            font_registered = False
+            
+            for font_path in font_paths:
+                if os.path.exists(font_path):
+                    try:
+                        pdfmetrics.registerFont(TTFont(font_name, font_path))
+                        font_registered = True
+                        break
+                    except:
+                        continue
+            
+            if not font_registered:
+                font_name = 'Helvetica'
+        except:
+            font_name = 'Helvetica'
     
-    for food in food_records:
-        timestamp = datetime.fromisoformat(food['timestamp']).strftime('%Y-%m-%d %H:%M')
-        html_content += f'''
-                    <tr>
-                        <td>{timestamp}</td>
-                        <td>{food['food_name']}</td>
-                        <td>{food['quantity']} {food['unit']}</td>
-                        <td>{food['meal_type']}</td>
-                        <td>{round(food['calories'], 1)} kcal</td>
-                    </tr>
-        '''
+    pdf_buffer = io.BytesIO()
     
-    html_content += '''
-                </tbody>
-            </table>
-        </div>
+    doc = SimpleDocTemplate(
+        pdf_buffer,
+        pagesize=A4,
+        rightMargin=2*cm,
+        leftMargin=2*cm,
+        topMargin=2*cm,
+        bottomMargin=2*cm
+    )
+    
+    styles = getSampleStyleSheet()
+    
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Title'],
+        fontName=font_name,
+        fontSize=24,
+        spaceAfter=30,
+        textColor=colors.HexColor('#2c3e50')
+    )
+    
+    heading_style = ParagraphStyle(
+        'CustomHeading',
+        parent=styles['Heading2'],
+        fontName=font_name,
+        fontSize=16,
+        spaceBefore=20,
+        spaceAfter=15,
+        textColor=colors.HexColor('#34495e'),
+        borderPadding=(0, 0, 5, 0),
+        borderWidth=0,
+        borderColor=colors.HexColor('#3498db')
+    )
+    
+    normal_style = ParagraphStyle(
+        'CustomNormal',
+        parent=styles['Normal'],
+        fontName=font_name,
+        fontSize=11,
+        spaceAfter=10,
+        leading=18
+    )
+    
+    small_style = ParagraphStyle(
+        'CustomSmall',
+        parent=styles['Normal'],
+        fontName=font_name,
+        fontSize=9,
+        textColor=colors.gray
+    )
+    
+    story = []
+    
+    story.append(Paragraph(report_title, title_style))
+    story.append(Paragraph(f'生成时间: {now.strftime("%Y-%m-%d %H:%M:%S")}', small_style))
+    story.append(Spacer(1, 20))
+    
+    story.append(Paragraph('报告摘要', heading_style))
+    
+    summary_data = [
+        ['情绪记录总数', f'{len(records)} 条'],
+        ['食物记录总数', f'{len(food_records)} 条'],
+        ['失控进食次数', f'{out_of_control_count} 次'],
+        ['失控进食率', f'{round(out_of_control_count / len(records) * 100, 1) if records else 0}%'],
+    ]
+    
+    summary_table = Table(summary_data, colWidths=[8*cm, 6*cm])
+    summary_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f8f9fa')),
+        ('TEXTCOLOR', (0, 0), (-1, -1), colors.HexColor('#333333')),
+        ('FONTNAME', (0, 0), (-1, -1), font_name),
+        ('FONTSIZE', (0, 0), (-1, -1), 11),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+        ('TOPPADDING', (0, 0), (-1, -1), 12),
+        ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#dee2e6')),
+        ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
+    ]))
+    story.append(summary_table)
+    
+    story.append(Paragraph('营养摄入统计', heading_style))
+    
+    nutrition_data = [
+        ['总卡路里', f'{round(total_calories, 1)} kcal'],
+        ['总碳水化合物', f'{round(total_carbs, 1)} g'],
+        ['总蛋白质', f'{round(total_protein, 1)} g'],
+        ['总脂肪', f'{round(total_fat, 1)} g'],
+    ]
+    
+    nutrition_table = Table(nutrition_data, colWidths=[8*cm, 6*cm])
+    nutrition_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f8f9fa')),
+        ('TEXTCOLOR', (0, 0), (-1, -1), colors.HexColor('#333333')),
+        ('FONTNAME', (0, 0), (-1, -1), font_name),
+        ('FONTSIZE', (0, 0), (-1, -1), 11),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+        ('TOPPADDING', (0, 0), (-1, -1), 12),
+        ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#dee2e6')),
+        ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
+    ]))
+    story.append(nutrition_table)
+    
+    story.append(Paragraph('食物记录详情', heading_style))
+    
+    if food_records:
+        food_table_data = [['时间', '食物名称', '分量', '餐次', '卡路里']]
         
-        <div class="section">
-            <h2>情绪记录详情</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>时间</th>
-                        <th>情绪</th>
-                        <th>情境</th>
-                        <th>饥饿程度</th>
-                        <th>失控进食</th>
-                    </tr>
-                </thead>
-                <tbody>
-    '''
-    
-    for record in records:
-        timestamp = datetime.fromisoformat(record['timestamp']).strftime('%Y-%m-%d %H:%M')
-        is_out_of_control = '是' if record['is_out_of_control'] == 1 else '否'
-        html_content += f'''
-                    <tr>
-                        <td>{timestamp}</td>
-                        <td>{record['emotion']}</td>
-                        <td>{record['situation']}</td>
-                        <td>{record['hunger_level']}</td>
-                        <td>{is_out_of_control}</td>
-                    </tr>
-        '''
-    
-    html_content += '''
-                </tbody>
-            </table>
-        </div>
+        for food in food_records:
+            timestamp = datetime.fromisoformat(food['timestamp']).strftime('%Y-%m-%d %H:%M')
+            food_table_data.append([
+                timestamp,
+                food['food_name'],
+                f'{food["quantity"]} {food["unit"]}',
+                food['meal_type'],
+                f'{round(food["calories"], 1)} kcal'
+            ])
         
-        <div class="footer">
-            <p>FoodScape - 关注健康饮食，了解自己的进食习惯</p>
-        </div>
-    </body>
-    </html>
-    '''
+        food_table = Table(food_table_data, colWidths=[3.5*cm, 3*cm, 3*cm, 2*cm, 2.5*cm])
+        food_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#3498db')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('FONTNAME', (0, 0), (-1, -1), font_name),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('FONTSIZE', (0, 1), (-1, -1), 9),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
+            ('TOPPADDING', (0, 0), (-1, -1), 10),
+            ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#dee2e6')),
+            ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ]))
+        
+        for i in range(1, len(food_table_data)):
+            if i % 2 == 0:
+                food_table.setStyle(TableStyle([
+                    ('BACKGROUND', (0, i), (-1, i), colors.HexColor('#f8f9fa')),
+                ]))
+        
+        story.append(food_table)
+    else:
+        story.append(Paragraph('暂无食物记录', normal_style))
     
-    return html_content, 200, {'Content-Type': 'text/html; charset=utf-8'}
+    story.append(Paragraph('情绪记录详情', heading_style))
+    
+    if records:
+        emotion_table_data = [['时间', '情绪', '情境', '饥饿程度', '失控进食']]
+        
+        for record in records:
+            timestamp = datetime.fromisoformat(record['timestamp']).strftime('%Y-%m-%d %H:%M')
+            is_out_of_control = '是' if record['is_out_of_control'] == 1 else '否'
+            emotion_table_data.append([
+                timestamp,
+                record['emotion'],
+                record['situation'],
+                str(record['hunger_level']),
+                is_out_of_control
+            ])
+        
+        emotion_table = Table(emotion_table_data, colWidths=[3.5*cm, 2.5*cm, 2.5*cm, 2*cm, 2.5*cm])
+        emotion_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#3498db')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('FONTNAME', (0, 0), (-1, -1), font_name),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('FONTSIZE', (0, 1), (-1, -1), 9),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
+            ('TOPPADDING', (0, 0), (-1, -1), 10),
+            ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#dee2e6')),
+            ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ]))
+        
+        for i in range(1, len(emotion_table_data)):
+            if i % 2 == 0:
+                emotion_table.setStyle(TableStyle([
+                    ('BACKGROUND', (0, i), (-1, i), colors.HexColor('#f8f9fa')),
+                ]))
+        
+        for i, row in enumerate(emotion_table_data[1:], start=1):
+            if row[4] == '是':
+                emotion_table.setStyle(TableStyle([
+                    ('BACKGROUND', (0, i), (-1, i), colors.HexColor('#fff3cd')),
+                ]))
+        
+        story.append(emotion_table)
+    else:
+        story.append(Paragraph('暂无情绪记录', normal_style))
+    
+    story.append(Spacer(1, 30))
+    story.append(Paragraph('FoodScape - 关注健康饮食，了解自己的进食习惯', small_style))
+    story.append(Paragraph('本报告由 FoodScape 系统自动生成', small_style))
+    
+    doc.build(story)
+    pdf_buffer.seek(0)
+    
+    filename = f'foodscape-{report_type}-report-{now.strftime("%Y%m%d")}.pdf'
+    
+    return send_file(
+        pdf_buffer,
+        download_name=filename,
+        as_attachment=True,
+        mimetype='application/pdf'
+    )
 
 if __name__ == '__main__':
     init_db()
