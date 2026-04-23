@@ -393,8 +393,12 @@
         <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('food')">食物记录与营养分析</button>
             <button class="tab-btn" onclick="switchTab('emotion')">情绪记录</button>
+            <button class="tab-btn" onclick="switchTab('skills')">技能训练</button>
+            <button class="tab-btn" onclick="switchTab('growth')">成长树</button>
+            <button class="tab-btn" onclick="switchTab('support')">互助小组</button>
             <button class="tab-btn" onclick="switchTab('trends')">趋势可视化</button>
             <button class="tab-btn" onclick="switchTab('export')">导出报告</button>
+            <button class="tab-btn" onclick="switchTab('chat')">情绪安抚</button>
         </div>
         
         <div id="alert-success" class="alert alert-success"></div>
@@ -625,6 +629,191 @@
                 <h3>JSON 报告预览</h3>
                 <pre id="json-content" style="background: #f8f9fa; padding: 20px; border-radius: 10px; overflow-x: auto; white-space: pre-wrap; word-break: break-all;"></pre>
                 <button class="btn btn-primary" style="margin-top: 15px;" onclick="downloadJSON()">下载 JSON 文件</button>
+            </div>
+            
+            <div class="card" style="margin-top: 20px;">
+                <h3>咨询师专业报告</h3>
+                <div class="form-group" style="max-width: 300px;">
+                    <label for="therapist-report-type">报告类型</label>
+                    <select id="therapist-report-type">
+                        <option value="weekly">每周报告</option>
+                        <option value="monthly">每月报告</option>
+                    </select>
+                </div>
+                <button class="btn btn-secondary" onclick="generateTherapistReport()">生成咨询师报告</button>
+                <div id="therapist-report-preview" style="display: none; margin-top: 20px;">
+                    <h4>报告预览</h4>
+                    <pre id="therapist-report-content" style="background: #f8f9fa; padding: 20px; border-radius: 10px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; max-height: 500px; overflow-y: auto;"></pre>
+                    <button class="btn btn-primary" style="margin-top: 15px;" onclick="downloadTherapistReport()">下载报告</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="skills" class="tab-content">
+            <h2>技能训练</h2>
+            
+            <div class="card">
+                <h3>我的技能卡</h3>
+                <div id="skills-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                </div>
+            </div>
+        </div>
+        
+        <div id="growth" class="tab-content">
+            <h2>成长树</h2>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h4>当前等级</h4>
+                    <div class="value" id="tree-level">1</div>
+                    <div class="unit">级</div>
+                </div>
+                <div class="stat-card green">
+                    <h4>收集进度</h4>
+                    <div class="value" id="tree-progress">0</div>
+                    <div class="unit">%</div>
+                </div>
+                <div class="stat-card orange">
+                    <h4>已收集碎片</h4>
+                    <div class="value" id="collected-pieces">0</div>
+                    <div class="unit">/ <span id="total-pieces">10</span></div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>拼图碎片收集</h3>
+                <div id="puzzle-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+                </div>
+            </div>
+        </div>
+        
+        <div id="support" class="tab-content">
+            <h2>互助小组</h2>
+            
+            <div class="card">
+                <h3>发布消息</h3>
+                <div class="form-group">
+                    <label for="message-type">消息类型</label>
+                    <select id="message-type">
+                        <option value="encouragement">鼓励</option>
+                        <option value="achievement">成就分享</option>
+                        <option value="struggle">求助</option>
+                        <option value="tip">小贴士</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="message-content">消息内容</label>
+                    <textarea id="message-content" rows="3" placeholder="分享你的经历或鼓励他人..."></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="postSupportMessage()">发布消息</button>
+            </div>
+            
+            <div class="card">
+                <h3>小组动态</h3>
+                <div id="messages-container">
+                </div>
+            </div>
+        </div>
+        
+        <div id="chat" class="tab-content">
+            <h2>情绪安抚</h2>
+            
+            <div class="card">
+                <h3>AI 情绪支持对话</h3>
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="chat-emotion">当前情绪</label>
+                        <select id="chat-emotion">
+                            <option value="焦虑">焦虑</option>
+                            <option value="压力">压力</option>
+                            <option value="无聊">无聊</option>
+                            <option value="悲伤">悲伤</option>
+                            <option value="愤怒">愤怒</option>
+                            <option value="疲惫">疲惫</option>
+                            <option value="兴奋">兴奋</option>
+                            <option value="平静">平静</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="chat-situation">当前情境</label>
+                        <select id="chat-situation">
+                            <option value="工作学习">工作学习</option>
+                            <option value="休闲娱乐">休闲娱乐</option>
+                            <option value="社交场合">社交场合</option>
+                            <option value="独处">独处</option>
+                            <option value="通勤">通勤</option>
+                            <option value="睡前">睡前</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div id="chat-container" style="height: 400px; overflow-y: auto; border: 2px solid #e0e0e0; border-radius: 10px; padding: 15px; margin-bottom: 20px; background: #fafafa;">
+                    <div style="text-align: center; color: #667eea; margin-bottom: 20px;">
+                        <p>👋 你好！我是你的情绪支持者。</p>
+                        <p>无论你现在感受如何，都可以和我聊聊。</p>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="chat-input" style="flex: 1; padding: 12px 15px; border: 2px solid #e0e0e0; border-radius: 25px; font-size: 1rem;" placeholder="输入你想说的话...">
+                    <button class="btn btn-primary" onclick="sendChatMessage()">发送</button>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>设备数据同步</h3>
+                <p>同步设备数据可以帮助我们更好地了解你的状态，提供更个性化的支持。</p>
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="sleep-duration">昨晚睡眠时长 (小时)</label>
+                        <input type="number" id="sleep-duration" min="0" max="24" step="0.5" placeholder="例如: 6.5">
+                    </div>
+                    <div class="form-group">
+                        <label for="steps">今日步数</label>
+                        <input type="number" id="steps" min="0" placeholder="例如: 5000">
+                    </div>
+                    <div class="form-group">
+                        <label for="screen-time">今日屏幕使用时间 (小时)</label>
+                        <input type="number" id="screen-time" min="0" max="24" step="0.5" placeholder="例如: 4">
+                    </div>
+                </div>
+                
+                <button class="btn btn-secondary" onclick="syncDeviceData()">同步设备数据</button>
+                <button class="btn btn-success" style="margin-left: 10px;" onclick="inferFatigueStress()">推测疲劳/压力水平</button>
+                
+                <div id="fatigue-stress-result" style="display: none; margin-top: 20px;">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <h4>推测疲劳水平</h4>
+                            <div class="value" id="inferred-fatigue">5</div>
+                            <div class="unit">/ 10</div>
+                        </div>
+                        <div class="stat-card orange">
+                            <h4>推测压力水平</h4>
+                            <div class="value" id="inferred-stress">5</div>
+                            <div class="unit">/ 10</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="intervention-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center;">
+            <div style="background: white; border-radius: 20px; padding: 30px; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto;">
+                <h3 style="color: #e74c3c; margin-bottom: 20px;">⚠️ 检测到高风险模式</h3>
+                <p id="intervention-message" style="margin-bottom: 20px;"></p>
+                
+                <h4 style="margin-bottom: 15px;">建议干预措施：</h4>
+                <div id="intervention-options" style="margin-bottom: 20px;">
+                </div>
+                
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="btn btn-success" onclick="acceptIntervention()">尝试干预</button>
+                    <button class="btn btn-primary" onclick="blockBinge()">阻断暴食</button>
+                    <button class="btn btn-secondary" onclick="closeInterventionModal()">稍后再说</button>
+                </div>
             </div>
         </div>
     </div>
@@ -1173,6 +1362,584 @@
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
         }
+        
+        let lastTherapistReport = null;
+        
+        async function addEmotionRecord() {
+            const emotion = document.getElementById('emotion-select').value;
+            const situation = document.getElementById('situation-select').value;
+            const hungerLevel = parseInt(document.getElementById('hunger-level').value);
+            const isOutOfControl = document.getElementById('out-of-control').value === 'true';
+            const notes = document.getElementById('emotion-notes').value;
+            
+            try {
+                const highRiskResponse = await fetch('/api/check-high-risk', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        emotion: emotion,
+                        situation: situation
+                    })
+                });
+                
+                const highRiskData = await highRiskResponse.json();
+                
+                if (highRiskData.is_high_risk) {
+                    showInterventionModal(highRiskData);
+                    return;
+                }
+                
+                const response = await fetch('/api/records', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        emotion: emotion,
+                        situation: situation,
+                        hunger_level: hungerLevel,
+                        is_out_of_control: isOutOfControl,
+                        notes: notes
+                    })
+                });
+                
+                if (response.ok) {
+                    showAlert('success', '情绪记录添加成功！');
+                    document.getElementById('emotion-notes').value = '';
+                    loadEmotionRecords();
+                } else {
+                    showAlert('error', '添加失败');
+                }
+            } catch (error) {
+                showAlert('error', '网络错误，请重试');
+                console.error('Error:', error);
+            }
+        }
+        
+        function showInterventionModal(data) {
+            const modal = document.getElementById('intervention-modal');
+            const message = document.getElementById('intervention-message');
+            const options = document.getElementById('intervention-options');
+            
+            message.innerHTML = `
+                <strong>检测到的高风险模式：</strong><br>
+                情绪: ${data.pattern.emotion}<br>
+                情境: ${data.pattern.situation}<br>
+                时间类别: ${data.pattern.time_category}<br>
+                历史失控率: ${data.pattern.percentage}%
+            `;
+            
+            let optionsHtml = '<ul style="list-style-type: none; padding: 0;">';
+            data.intervention_options.forEach((option, index) => {
+                optionsHtml += `
+                    <li style="padding: 10px; margin: 5px 0; background: #f8f9fa; border-radius: 8px; cursor: pointer;" 
+                        onclick="selectInterventionOption('${option.replace(/'/g, "\\'")}')">
+                        ${index + 1}. ${option}
+                    </li>
+                `;
+            });
+            optionsHtml += '</ul>';
+            
+            options.innerHTML = optionsHtml;
+            modal.style.display = 'flex';
+        }
+        
+        function selectInterventionOption(option) {
+            showAlert('success', `已选择干预措施: ${option}`);
+        }
+        
+        async function acceptIntervention() {
+            const emotion = document.getElementById('emotion-select').value;
+            const situation = document.getElementById('situation-select').value;
+            const now = new Date();
+            const hour = now.getHours();
+            
+            const timeCategory = (22 <= hour || hour < 6) ? '深夜' :
+                               (6 <= hour && hour < 10) ? '早晨' :
+                               (10 <= hour && hour < 14) ? '中午' :
+                               (14 <= hour && hour < 18) ? '下午' : '傍晚';
+            
+            try {
+                await fetch('/api/log-intervention', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        emotion: emotion,
+                        situation: situation,
+                        time_category: timeCategory,
+                        intervention_type: 'accepted',
+                        is_successful: 1
+                    })
+                });
+                
+                closeInterventionModal();
+                showAlert('success', '干预措施已接受，继续加油！');
+                
+                const hungerLevel = parseInt(document.getElementById('hunger-level').value);
+                const isOutOfControl = document.getElementById('out-of-control').value === 'true';
+                const notes = document.getElementById('emotion-notes').value;
+                
+                await fetch('/api/records', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        emotion: emotion,
+                        situation: situation,
+                        hunger_level: hungerLevel,
+                        is_out_of_control: isOutOfControl,
+                        notes: notes + ' (已接受干预)'
+                    })
+                });
+                
+                document.getElementById('emotion-notes').value = '';
+                loadEmotionRecords();
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+        
+        async function blockBinge() {
+            try {
+                const response = await fetch('/api/block-binge', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                
+                const result = await response.json();
+                
+                closeInterventionModal();
+                
+                if (result.puzzle_award.awarded) {
+                    showAlert('success', `太棒了！成功阻断暴食！获得拼图碎片: ${result.puzzle_award.piece_name}`);
+                } else {
+                    showAlert('success', '太棒了！成功阻断暴食！');
+                }
+                
+                loadGrowthTree();
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('error', '操作失败');
+            }
+        }
+        
+        function closeInterventionModal() {
+            document.getElementById('intervention-modal').style.display = 'none';
+        }
+        
+        async function loadSkillCards() {
+            try {
+                const response = await fetch('/api/skill-cards');
+                const skills = await response.json();
+                
+                const container = document.getElementById('skills-container');
+                container.innerHTML = '';
+                
+                skills.forEach(skill => {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.style.opacity = skill.is_unlocked ? '1' : '0.6';
+                    
+                    const categoryColors = {
+                        '冲动控制': '#e74c3c',
+                        '情绪管理': '#3498db',
+                        '放松技巧': '#2ecc71',
+                        '进食习惯': '#f39c12',
+                        '应对策略': '#9b59b6',
+                        '社交技能': '#1abc9c'
+                    };
+                    
+                    const color = categoryColors[skill.skill_category] || '#667eea';
+                    
+                    card.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <h4 style="margin: 0; color: ${color};">${skill.skill_name}</h4>
+                            <span style="font-size: 0.8rem; color: ${skill.is_unlocked ? '#2ecc71' : '#95a5a6'};">
+                                ${skill.is_unlocked ? '✅ 已解锁' : '🔒 未解锁'}
+                            </span>
+                        </div>
+                        <p style="color: #666; margin-bottom: 10px;">${skill.skill_description}</p>
+                        <div style="display: flex; gap: 10px; font-size: 0.85rem; color: #666; margin-bottom: 10px;">
+                            <span>📂 ${skill.skill_category}</span>
+                            <span>⭐ 难度 ${skill.difficulty_level}</span>
+                            <span>⏱️ ${skill.estimated_time}分钟</span>
+                        </div>
+                        ${skill.prerequisites ? `<p style="font-size: 0.85rem; color: #e74c3c;">🔗 前置技能: ${skill.prerequisites}</p>` : ''}
+                        ${skill.is_unlocked ? `
+                            <div style="margin-top: 15px;">
+                                <div style="margin-bottom: 10px;">
+                                    <label style="display: block; margin-bottom: 5px;">完成时间 (分钟)</label>
+                                    <input type="number" id="completion-time-${skill.id}" min="1" value="${skill.estimated_time}" 
+                                        style="padding: 8px; border: 1px solid #e0e0e0; border-radius: 5px; width: 100px;">
+                                </div>
+                                <div style="margin-bottom: 10px;">
+                                    <label style="display: block; margin-bottom: 5px;">自评效果 (1-5)</label>
+                                    <select id="rating-${skill.id}" style="padding: 8px; border: 1px solid #e0e0e0; border-radius: 5px;">
+                                        <option value="5">⭐⭐⭐⭐⭐ 非常有效</option>
+                                        <option value="4">⭐⭐⭐⭐ 有效</option>
+                                        <option value="3" selected>⭐⭐⭐ 一般</option>
+                                        <option value="2">⭐⭐ 效果不佳</option>
+                                        <option value="1">⭐ 无效</option>
+                                    </select>
+                                </div>
+                                <button class="btn btn-success" onclick="completeSkill(${skill.id})" style="padding: 10px 20px;">
+                                    ✅ 完成训练
+                                </button>
+                            </div>
+                        ` : ''}
+                    `;
+                    
+                    container.appendChild(card);
+                });
+            } catch (error) {
+                console.error('Error loading skill cards:', error);
+            }
+        }
+        
+        async function completeSkill(skillId) {
+            const completionTime = parseInt(document.getElementById(`completion-time-${skillId}`).value) || 0;
+            const rating = parseInt(document.getElementById(`rating-${skillId}`).value) || 3;
+            
+            try {
+                const response = await fetch(`/api/skill-cards/${skillId}/complete`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        completion_time: completionTime,
+                        rating: rating
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    let message = '技能完成记录已保存！';
+                    if (result.puzzle_award.awarded) {
+                        message += ` 获得拼图碎片: ${result.puzzle_award.piece_name}`;
+                    }
+                    if (result.unlocked_skill) {
+                        message += ` 解锁新技能: ${result.unlocked_skill.skill_name}`;
+                    }
+                    
+                    showAlert('success', message);
+                    loadSkillCards();
+                    loadGrowthTree();
+                } else {
+                    showAlert('error', result.error || '操作失败');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('error', '网络错误');
+            }
+        }
+        
+        async function loadGrowthTree() {
+            try {
+                const response = await fetch('/api/growth-tree');
+                const data = await response.json();
+                
+                document.getElementById('tree-level').textContent = data.tree_level;
+                document.getElementById('tree-progress').textContent = data.progress_percentage;
+                document.getElementById('collected-pieces').textContent = data.collected_pieces;
+                document.getElementById('total-pieces').textContent = data.total_pieces;
+                
+                const container = document.getElementById('puzzle-container');
+                container.innerHTML = '';
+                
+                data.puzzle_pieces.forEach(piece => {
+                    const pieceDiv = document.createElement('div');
+                    pieceDiv.style.cssText = `
+                        padding: 15px;
+                        border-radius: 10px;
+                        text-align: center;
+                        background: ${piece.is_collected ? 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)' : '#f0f0f0'};
+                        color: ${piece.is_collected ? 'white' : '#999'};
+                        cursor: default;
+                    `;
+                    
+                    pieceDiv.innerHTML = `
+                        <div style="font-size: 2rem; margin-bottom: 5px;">${piece.is_collected ? '🧩' : '❓'}</div>
+                        <div style="font-weight: bold;">${piece.is_collected ? piece.piece_name : '???'}</div>
+                        <div style="font-size: 0.8rem; opacity: 0.8;">
+                            ${piece.is_collected ? `收集于: ${new Date(piece.collect_date).toLocaleDateString('zh-CN')}` : '未收集'}
+                        </div>
+                    `;
+                    
+                    container.appendChild(pieceDiv);
+                });
+            } catch (error) {
+                console.error('Error loading growth tree:', error);
+            }
+        }
+        
+        async function loadSupportMessages() {
+            try {
+                const response = await fetch('/api/support-group/messages');
+                const messages = await response.json();
+                
+                const container = document.getElementById('messages-container');
+                container.innerHTML = '';
+                
+                if (messages.length === 0) {
+                    container.innerHTML = '<p style="color: #666; text-align: center;">暂无小组动态</p>';
+                    return;
+                }
+                
+                const typeLabels = {
+                    'encouragement': '💪 鼓励',
+                    'achievement': '🎉 成就',
+                    'struggle': '💔 求助',
+                    'tip': '💡 小贴士'
+                };
+                
+                const typeColors = {
+                    'encouragement': '#2ecc71',
+                    'achievement': '#f39c12',
+                    'struggle': '#e74c3c',
+                    'tip': '#3498db'
+                };
+                
+                messages.forEach(msg => {
+                    const msgDiv = document.createElement('div');
+                    msgDiv.className = 'card';
+                    msgDiv.style.cssText = 'margin-bottom: 15px; padding: 15px;';
+                    
+                    const date = new Date(msg.timestamp);
+                    const timeStr = date.toLocaleString('zh-CN');
+                    
+                    msgDiv.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <span style="background: ${typeColors[msg.message_type]}; color: white; padding: 3px 10px; border-radius: 15px; font-size: 0.85rem;">
+                                ${typeLabels[msg.message_type]}
+                            </span>
+                            <span style="color: #999; font-size: 0.85rem;">${timeStr}</span>
+                        </div>
+                        <p style="margin-bottom: 10px; color: #333;">${msg.message_content}</p>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <button onclick="likeMessage(${msg.id})" style="background: none; border: none; cursor: pointer; color: #e74c3c; font-size: 1rem;">
+                                ❤️ ${msg.likes_count}
+                            </button>
+                            <span style="color: #999; font-size: 0.85rem;">匿名用户</span>
+                        </div>
+                    `;
+                    
+                    container.appendChild(msgDiv);
+                });
+            } catch (error) {
+                console.error('Error loading support messages:', error);
+            }
+        }
+        
+        async function postSupportMessage() {
+            const messageType = document.getElementById('message-type').value;
+            const messageContent = document.getElementById('message-content').value.trim();
+            
+            if (!messageContent) {
+                showAlert('error', '请输入消息内容');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/support-group/messages', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message_type: messageType,
+                        message_content: messageContent
+                    })
+                });
+                
+                if (response.ok) {
+                    showAlert('success', '消息发布成功！');
+                    document.getElementById('message-content').value = '';
+                    loadSupportMessages();
+                } else {
+                    showAlert('error', '发布失败');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('error', '网络错误');
+            }
+        }
+        
+        async function likeMessage(messageId) {
+            try {
+                await fetch(`/api/support-group/messages/${messageId}/like`, {
+                    method: 'POST'
+                });
+                loadSupportMessages();
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+        
+        async function sendChatMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            const container = document.getElementById('chat-container');
+            const emotion = document.getElementById('chat-emotion').value;
+            const situation = document.getElementById('chat-situation').value;
+            
+            const userMsgDiv = document.createElement('div');
+            userMsgDiv.style.cssText = 'margin-bottom: 15px; text-align: right;';
+            userMsgDiv.innerHTML = `
+                <div style="display: inline-block; background: #667eea; color: white; padding: 10px 15px; border-radius: 15px 15px 0 15px; max-width: 70%;">
+                    ${message}
+                </div>
+            `;
+            container.appendChild(userMsgDiv);
+            
+            input.value = '';
+            container.scrollTop = container.scrollHeight;
+            
+            try {
+                const response = await fetch('/api/llm-chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: message,
+                        emotion_context: emotion,
+                        situation_context: situation
+                    })
+                });
+                
+                const data = await response.json();
+                
+                const assistantMsgDiv = document.createElement('div');
+                assistantMsgDiv.style.cssText = 'margin-bottom: 15px; text-align: left;';
+                assistantMsgDiv.innerHTML = `
+                    <div style="display: inline-block; background: #f0f0f0; color: #333; padding: 10px 15px; border-radius: 15px 15px 15px 0; max-width: 70%;">
+                        ${data.response}
+                    </div>
+                `;
+                container.appendChild(assistantMsgDiv);
+                container.scrollTop = container.scrollHeight;
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('error', '网络错误，请稍后重试');
+            }
+        }
+        
+        async function syncDeviceData() {
+            const sleepDuration = parseFloat(document.getElementById('sleep-duration').value);
+            const steps = parseInt(document.getElementById('steps').value);
+            const screenTime = parseFloat(document.getElementById('screen-time').value);
+            
+            try {
+                if (!isNaN(sleepDuration) && sleepDuration > 0) {
+                    await fetch('/api/device-data', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            data_type: 'sleep_duration',
+                            value: sleepDuration,
+                            unit: 'hours',
+                            source: 'manual'
+                        })
+                    });
+                }
+                
+                if (!isNaN(steps) && steps > 0) {
+                    await fetch('/api/device-data', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            data_type: 'steps',
+                            value: steps,
+                            unit: 'steps',
+                            source: 'manual'
+                        })
+                    });
+                }
+                
+                if (!isNaN(screenTime) && screenTime > 0) {
+                    await fetch('/api/device-data', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            data_type: 'screen_time',
+                            value: screenTime,
+                            unit: 'hours',
+                            source: 'manual'
+                        })
+                    });
+                }
+                
+                showAlert('success', '设备数据同步成功！');
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('error', '同步失败');
+            }
+        }
+        
+        async function inferFatigueStress() {
+            try {
+                const response = await fetch('/api/infer-fatigue-stress');
+                const data = await response.json();
+                
+                document.getElementById('inferred-fatigue').textContent = data.fatigue_level;
+                document.getElementById('inferred-stress').textContent = data.stress_level;
+                document.getElementById('fatigue-stress-result').style.display = 'block';
+                
+                showAlert('success', `推测完成！置信度: ${data.confidence === 'medium' ? '中等' : '低（建议补充设备数据）'}`);
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('error', '推测失败');
+            }
+        }
+        
+        async function generateTherapistReport() {
+            const reportType = document.getElementById('therapist-report-type').value;
+            
+            try {
+                const response = await fetch(`/api/therapist-report?type=${reportType}`);
+                const data = await response.json();
+                
+                lastTherapistReport = data;
+                
+                document.getElementById('therapist-report-content').textContent = data.report_content;
+                document.getElementById('therapist-report-preview').style.display = 'block';
+                
+                showAlert('success', '咨询师报告生成成功！');
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('error', '生成失败');
+            }
+        }
+        
+        function downloadTherapistReport() {
+            if (!lastTherapistReport) return;
+            
+            const blob = new Blob([lastTherapistReport.report_content], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `therapist-report-${new Date().toISOString().split('T')[0]}.md`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        const originalSwitchTab = switchTab;
+        function switchTab(tabName) {
+            originalSwitchTab(tabName);
+            
+            if (tabName === 'skills') {
+                loadSkillCards();
+            } else if (tabName === 'growth') {
+                loadGrowthTree();
+            } else if (tabName === 'support') {
+                loadSupportMessages();
+            }
+        }
+        
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && e.target.id === 'chat-input') {
+                sendChatMessage();
+            }
+        });
     </script>
 </body>
 </html>
