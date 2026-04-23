@@ -842,6 +842,12 @@
             
             if (tabName === 'trends') {
                 setTimeout(() => loadTrends(), 100);
+            } else if (tabName === 'skills') {
+                setTimeout(() => loadSkillCards(), 100);
+            } else if (tabName === 'growth') {
+                setTimeout(() => loadGrowthTree(), 100);
+            } else if (tabName === 'support') {
+                setTimeout(() => loadSupportMessages(), 100);
             }
         }
         
@@ -1920,19 +1926,6 @@
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-        }
-        
-        const originalSwitchTab = switchTab;
-        function switchTab(tabName) {
-            originalSwitchTab(tabName);
-            
-            if (tabName === 'skills') {
-                loadSkillCards();
-            } else if (tabName === 'growth') {
-                loadGrowthTree();
-            } else if (tabName === 'support') {
-                loadSupportMessages();
-            }
         }
         
         document.addEventListener('keypress', function(e) {
